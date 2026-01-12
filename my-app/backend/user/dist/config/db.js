@@ -1,11 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 const connectDB = async () => {
     const url = process.env.DB_URL;
     if (!url) {
@@ -13,7 +8,7 @@ const connectDB = async () => {
         process.exit(1);
     }
     try {
-        await mongoose_1.default.connect(url, {
+        await mongoose.connect(url, {
             dbName: "chatapplication",
         });
         console.log("Database connected successfully");
@@ -24,4 +19,4 @@ const connectDB = async () => {
         process.exit(1);
     }
 };
-exports.default = connectDB;
+export default connectDB;

@@ -1,10 +1,12 @@
 import TryCatch from "../config/Trycatch.js";
-import { AuthenticatedRequest } from "../middlewares/isAuth.js";
+import isAuth, { AuthenticatedRequest } from "../middlewares/isAuth.js";
 import { Chat } from "../model/chat.js";
 import mongoose from "mongoose";
 import { Message } from "../model/messages.js";
 import axios from "axios";
 import dotenv from "dotenv";
+import cloudinary from "../config/cloudinary.js";
+import { uploadToCloudinary } from "../utils/cloudinaryupload.js";
 
 dotenv.config();
 
@@ -110,3 +112,90 @@ export const getAllChats = TryCatch(async (req: AuthenticatedRequest, res) => {
 
   res.json({ success: true, chats: chatWithUserData });
 });
+
+
+
+
+
+export const SendMessages = TryCatch(
+  async (req: AuthenticatedRequest, res) => {
+    const senderId = req.user?._id;
+    const { chatId, text } = req.body;
+    const imageFile = req.file;
+
+    if (!senderId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!chatId) {
+      return res.status(400).json({ message: "chatId is required" });
+    }
+
+    if (!text && !imageFile) {
+      return res
+        .status(400)
+        .json({ message: "Either text or image is required" });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    const isUserInChat = chat.users.some(
+      (userId) => userId.toString() === senderId.toString()
+    );
+
+    if (!isUserInChat) {
+      return res
+        .status(403)
+        .json({ message: "You are not a member of this chat" });
+    }
+
+    // ---------------- MESSAGE DATA ----------------
+
+    const messageData: any = {
+      chatId,
+      sender: senderId,
+      seen: false,
+      messageType: "text",
+    };
+
+    if (imageFile) {
+      const uploadResult = await uploadToCloudinary(imageFile);
+
+      messageData.image = {
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+      };
+
+      messageData.messageType = "image";
+      messageData.text = text || "";
+    } else {
+      messageData.text = text;
+    }
+
+    const message = new Message(messageData);
+    const savedMessage = await message.save();
+
+    const latestMessageText = imageFile ? "📷 Image" : text;
+
+    await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        latestMessage: {
+          text: latestMessageText,
+          sender: senderId,
+        },
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      message: savedMessage,
+      sender: senderId,
+    });
+  }
+);
+

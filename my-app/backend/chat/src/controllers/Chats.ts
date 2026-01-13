@@ -152,7 +152,6 @@ export const SendMessages = TryCatch(
         .json({ message: "You are not a member of this chat" });
     }
 
-    // ---------------- MESSAGE DATA ----------------
 
     const messageData: any = {
       chatId,
@@ -199,3 +198,92 @@ export const SendMessages = TryCatch(
   }
 );
 
+
+
+ export const  getMessagesByChat = TryCatch(async(req:AuthenticatedRequest , res) =>{
+  const userId = req.user?._id;
+  const {chatId} = req.params;
+
+    if (!chatId) {
+      return res.status(400).json({ message: "chatId is required" });
+    }
+
+      if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const chat = await Chat.findById(chatId);
+
+
+      if(!chat) {
+      return res.status(404).json({ message: "chat not found" });
+    }
+
+     const isUserInChat = chat.users.some(
+      (userId) => userId.toString() === userId.toString()
+    );
+
+       if (!isUserInChat) {
+      return res
+        .status(403)
+        .json({ message: "You are not a member of this chat" });
+    }
+
+    const messagestoMarkseen = await Message.find({
+      chatId: chatId,
+      sender : {$ne:userId},
+      seen:false,
+    })
+    
+     await Message.updateMany({
+      chatId: chatId,
+      sender : {$ne:userId},
+      seen:false,
+     },{
+      seen : true,
+      seenAt : new Date()
+     }
+    )
+
+
+    const messages = await Message.find({chatId}).sort({
+      createdAt : 1});
+
+
+const otherUserId = chat.users.find(
+  (id) => id.toString() !== userId
+);   
+
+
+     try {
+          const { data } = await axios.get(
+            `${process.env.USER_SERVICE}/api/v1/user/${otherUserId}`,
+            );
+
+          if (!otherUserId) {
+            return res.status(400).json({ message: "Not other user" });
+          }
+
+          // socket work
+
+
+
+          
+          res.json({
+            messages,
+            user:data,
+          })
+   
+        } catch (err: any) {
+          console.error("Failed to fetch user:", err.message);
+            res.json({
+            messages,
+            user:{_id : otherUserId , name : "Unknown User"},
+          })
+      
+        }
+
+
+
+
+ })

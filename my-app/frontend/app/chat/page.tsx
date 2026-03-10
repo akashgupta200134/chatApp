@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import Cookies from "js-cookie";
 import axios from "axios";
 import ChatHeader from "../components/chatHeader";
+import ChatMessages from "../components/chatMessages";
 
 export interface Message {
   _id: string;
@@ -150,8 +151,13 @@ console.log("token:", token);
 
       <div className="flex-1  flex flex-col justify-between p-4 backdrop-blur-xl bg-white/5 border-white/10 ">
       <ChatHeader user={user} setSidebarOpen={setSidebaropen} isTyping={isTyping}/>
+
+   
+
+ <ChatMessages selecteduser={selecteduser} messages={messages} loggedInUser={loggedInUser}/>
+
       </div>
-    
+      
     </div>
   );
 };

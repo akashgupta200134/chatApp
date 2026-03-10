@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAppData, User } from "../context/AppContext";
+import { chat_service, useAppData, User } from "../context/AppContext";
 import { useRouter } from "next/navigation";
 import Loading from "../components/loading";
 import Chatsidebar from "../components/chatSidebar";
+import toast from "react-hot-toast";
+import Cookies from "js-cookie";
+import axios from "axios";
+import ChatHeader from "../components/chatHeader";
 
 export interface Message {
   _id: string;
@@ -27,6 +31,7 @@ const ChatApp = () => {
     loading,
     LogoutUser,
     chats,
+    FetchChats,
     user: loggedInUser,
     allusers,
   } = useAppData();
@@ -41,7 +46,7 @@ const ChatApp = () => {
 
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeOut] = useState<NodeJS.Timeout | null>(
-    null
+    null,
   );
 
   const router = useRouter();
@@ -56,9 +61,76 @@ const ChatApp = () => {
     LogoutUser();
   };
 
+
+
+async function fetchChat(){
+
+  try {
+
+      const token = Cookies.get("token");
+      const { data } = await axios.get(
+        `${chat_service}/api/v1/message/${selecteduser}`,
+       
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+            
+      setMessage(data.message);
+      setUser(data.user);
+      await FetchChats();
+    } catch (error: any) {
+  console.log("Backend error:", error.response?.data);
+  toast.error(error.response?.data?.message || "  failed to start chat");
+}
+  }
+   
+  
+
+
+
+  async function createChat(u: User) {
+    try {
+      const token = Cookies.get("token");
+console.log("loggedInUser:", loggedInUser);
+console.log("other user:", u);
+console.log("token:", token);
+      const { data } = await axios.post(
+        `${chat_service}/api/v1/chat/new`,
+        {
+          userId: loggedInUser?._id,
+          otheruserId: u._id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setSelecteduser(data.chatId);
+      setShowAllUsers(false);
+      await FetchChats();
+    } catch (error: any) {
+  console.log("Backend error:", error.response?.data);
+  toast.error(error.response?.data?.message || "Chat creation failed");
+}
+  }
+
+  useEffect(() => {
+    if(selecteduser){
+      fetchChat();
+
+    }
+  },[selecteduser])
+
   if (loading) {
     return <Loading />;
   }
+
+
 
   return (
     <div className="min-h-screen flex bg-gray-900 text-white relative overflow-hidden">
@@ -73,7 +145,13 @@ const ChatApp = () => {
         Selecteduser={selecteduser}
         setSelectedUser={setSelecteduser}
         handleLogout={handleLogout}
+        createChat={createChat}
       />
+
+      <div className="flex-1  flex flex-col justify-between p-4 backdrop-blur-xl bg-white/5 border-white/10 ">
+      <ChatHeader user={user} setSidebarOpen={setSidebaropen} isTyping={isTyping}/>
+      </div>
+    
     </div>
   );
 };

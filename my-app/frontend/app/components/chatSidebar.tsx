@@ -23,6 +23,7 @@ interface ChatSideBarProps {
   Selecteduser: string | null;
   setSelectedUser: (userId: string | null) => void;
   handleLogout: () => void;
+  createChat : (user : User) => void;
 }
 
 export default function Chatsidebar({
@@ -36,6 +37,7 @@ export default function Chatsidebar({
   setSelectedUser,
   chats,
   handleLogout,
+  createChat,
 }: ChatSideBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -113,9 +115,8 @@ export default function Chatsidebar({
                   <button
                     key={u._id}
                     onClick={() => {
-                      setSelectedUser(u._id);
-                      setShowAllUsers(false);
-                      setSideBarOpen(false);
+                      createChat(u);
+                      
                     }}
                     className="w-full flex items-center gap-3 p-3 text-left rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800 transition-colors"
                   >

@@ -10,6 +10,7 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import ChatHeader from "../components/chatHeader";
 import ChatMessages from "../components/chatMessages";
+import MessageInput from "../components/MessageInput";
 
 export interface Message {
   _id: string;
@@ -88,8 +89,83 @@ async function fetchChat(){
 }
   }
    
-  
+    useEffect(() => {
+    if(selecteduser){
+      fetchChat();
 
+    }
+  },[selecteduser])
+
+
+const handleMessageSend = async (e: any, imageFile?: File | null) => {
+  e.preventDefault();
+
+  if (!message.trim() && !imageFile) return;
+  if (!selecteduser) return;
+
+  const token = Cookies.get("token");
+
+  try {
+    const formData = new FormData();
+
+    formData.append("chatId", selecteduser);
+
+    if (message.trim()) {
+      formData.append("text", message);
+    }
+
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    const { data } = await axios.post(
+      `${chat_service}/api/v1/message`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    // update messages list
+    setMessages((prev) => {
+      const currentMessages = prev ? [...prev] : [];
+
+      const messageExist = currentMessages.some(
+        (msg) => msg._id === data.message._id
+      );
+
+      if (!messageExist) {
+        return [...currentMessages, data.message];
+      }
+
+      return currentMessages;
+    });
+
+    // clear input
+    setMessage("");
+
+    const displayText = imageFile ? "📷 image" : message;
+
+
+  } 
+  catch (error: any) {
+    console.log(error);
+    toast.error(error?.response?.data?.message || "Message send failed");
+  }
+};
+  
+const  handleTyping = (value : string) => {
+  setMessage(value);
+    
+  if(!selecteduser) return;
+
+  //socket setup
+
+   
+}
 
 
   async function createChat(u: User) {
@@ -120,12 +196,10 @@ console.log("token:", token);
 }
   }
 
-  useEffect(() => {
-    if(selecteduser){
-      fetchChat();
 
-    }
-  },[selecteduser])
+
+
+
 
   if (loading) {
     return <Loading />;
@@ -155,6 +229,8 @@ console.log("token:", token);
    
 
  <ChatMessages selecteduser={selecteduser} messages={messages} loggedInUser={loggedInUser}/>
+
+ <MessageInput selecteduser = { selecteduser} message ={message} setMessage= {handleTyping} handleMessageSend = {handleMessageSend}/>
 
       </div>
       

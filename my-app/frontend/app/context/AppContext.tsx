@@ -41,17 +41,14 @@ interface AppContextType {
   isAuth: boolean;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setIsAuth: React.Dispatch<React.SetStateAction<boolean>>;
-   LogoutUser : () => Promise<void>;
-FetchAllusers : () => Promise<void>;
-FetchChats : () => Promise<void>;
+  LogoutUser: () => Promise<void>;
+  FetchAllusers: () => Promise<void>;
+  FetchChats: () => Promise<void>;
 
-chats : Chats[] | null ; 
-allusers : User[]  | null;
+  chats: Chats[] | null;
+  allusers: User[] | null;
 
-setChats : React.Dispatch<React.SetStateAction<Chats[] | null> >
-
-
-
+  setChats: React.Dispatch<React.SetStateAction<Chats[] | null>>;
 }
 
 interface AppProviderProps {
@@ -63,119 +60,115 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isAuth, setIsAuth] = useState(false);
   const [loading, setLoading] = useState(true);
 
- async function fetchUser() {
-  try {
-    const token = Cookies.get("token");
+  async function fetchUser() {
+    try {
+      const token = Cookies.get("token");
 
-    if (!token) return;
+      if (!token) return;
 
-    const { data } = await axios.get(`${user_service}/api/v1/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const { data } = await axios.get(`${user_service}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    // console.log(data);
-    
+      // console.log(data);
 
-    setUser(data);
-    setIsAuth(true);
-  } catch (error) {
-    console.log(error);
-  } finally {
-    setLoading(false);
+      setUser(data);
+      setIsAuth(true);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
-async function LogoutUser () {
+  async function LogoutUser() {
     Cookies.remove("token");
     setUser(null);
     setIsAuth(false);
     setChats(null);
     setAllUsers(null);
-    toast.success("User Logged Out")
-}
+    toast.success("User Logged Out");
+  }
 
-const [chats , setChats] = useState<Chats[] | null>(null);
+  const [chats, setChats] = useState<Chats[] | null>(null);
 
-async function FetchChats(){
+  async function FetchChats() {
     const token = Cookies.get("token");
     if (!token) return;
     try {
-          
-        const {data} = await axios.get(`${chat_service}/api/v1/chat/all`, {
-            headers :{
-                Authorization : `Bearer ${token}`,
-            }
-        })
-           
-        setChats(data.chats)
+      const { data } = await axios.get(`${chat_service}/api/v1/chat/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-
-         
+      setChats(data.chats);
     } catch (error) {
-       console.log(error);
-       toast.error("Something went wrong while fetching the chats")
-        
+      console.log(error);
+      toast.error("Something went wrong while fetching the chats");
     }
-}
+  }
 
+  const [allusers, setAllUsers] = useState<User[] | null>(null);
 
- const [allusers , setAllUsers] = useState<User[] |null >(null);
-
- async function FetchAllusers() {
+  async function FetchAllusers() {
     const token = Cookies.get("token");
 
     try {
-         
-        const  { data} = await axios.get(`${user_service}/api/v1/user/all`, {
-            headers:{
-                Authorization: `Bearer ${token}`,
-            }
-        });
-       
-         setAllUsers(data);
-        // setAllUsers(data.users);
+      const { data } = await axios.get(`${user_service}/api/v1/user/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-
+      setAllUsers(data);
+      // setAllUsers(data.users);
     } catch (error) {
-        console.log(error);
-        toast.error("Something went wrong while fetching All the users")
-        
-        
+      console.log(error);
+      toast.error("Something went wrong while fetching All the users");
     }
-    
- }
-
-
-
-useEffect(() => {
-  const token = Cookies.get("token");
-
-  if (token) {
-    fetchUser();
-    FetchChats();
-    FetchAllusers();
-  } else {
-    setLoading(false);
   }
-}, []);
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+
+    if (token) {
+      fetchUser();
+      FetchChats();
+      FetchAllusers();
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   return (
-<AppContext.Provider
-  value={{ user, setUser, isAuth, setIsAuth, loading, LogoutUser , FetchChats , FetchAllusers, chats , allusers , setChats}}
->
-  {children}
-  <Toaster/>
-</AppContext.Provider>
+    <AppContext.Provider
+      value={{
+        user,
+        setUser,
+        isAuth,
+        setIsAuth,
+        loading,
+        LogoutUser,
+        FetchChats,
+        FetchAllusers,
+        chats,
+        allusers,
+        setChats,
+      }}
+    >
+      {children}
+      <Toaster />
+    </AppContext.Provider>
   );
 };
 
-
-export const useAppData = () : AppContextType =>{
-    const context = useContext(AppContext);
-    if(!context){
-        throw new Error("useappdata must be used within AppProvider")
-    }
-    return context;
-}
+export const useAppData = (): AppContextType => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error("useappdata must be used within AppProvider");
+  }
+  return context;
+};
